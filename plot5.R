@@ -1,4 +1,5 @@
 library('dplyr')
+library('ggplot2')
 # Loading data
 # Initialization section
 Sys.setlocale('LC_ALL', 'en_US.UTF8')
@@ -21,13 +22,18 @@ if (!file.exists(zipfile)) {
 data <- readRDS(dataFile)
 data <- transform(data, year = factor(year))
 sources <- readRDS(sourceFile)
-# Making plot
-# Subsetting data for Baltimore
 filteredData <- subset(data, data$fips ==  '24510')
-years <- group_by (filteredData, year)
+vehicles <- sources[grep('Vehicle', sources$SCC.Level.Three, ignore.case = TRUE), ]
+fullData <- merge(filteredData, vehicles, by = 'SCC') 
+
+years <- group_by (fullData, year)
 df <- summarize(years, Emissions = sum(Emissions, na.rm = TRUE))
-plot(as.character(df$year), as.numeric(df$Emissions), main = 'PM25 emission per year, Baltimore', xlab = 'Year',
-	ylab = 'Emissions, tons', col='blue')
+plot(as.character(df$year), as.numeric(df$Emissions),
+	main = 'Total PM25 emissions per year\n from vehicles, Baltimore',
+	ylab = 'Emissions, tons',
+	xlab = 'Year',
+	col='blue')
+
 lines(as.character(df$year), as.numeric(df$Emissions))
-dev.copy(png,filename="plots/plot2.png", bg="white");
+dev.copy(png,filename="plots/plot5.png", bg="white");
 dev.off()

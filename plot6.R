@@ -1,4 +1,5 @@
 library('dplyr')
+library('ggplot2')
 # Loading data
 # Initialization section
 Sys.setlocale('LC_ALL', 'en_US.UTF8')
@@ -21,13 +22,14 @@ if (!file.exists(zipfile)) {
 data <- readRDS(dataFile)
 data <- transform(data, year = factor(year))
 sources <- readRDS(sourceFile)
-# Making plot
-# Subsetting data for Baltimore
-filteredData <- subset(data, data$fips ==  '24510')
-years <- group_by (filteredData, year)
+filteredData <- subset(data, data$fips ==  '24510' | data$fips == '06037')
+vehicles <- sources[grep('Vehicle', sources$SCC.Level.Three, ignore.case = TRUE), ]
+fullData <- merge(filteredData, vehicles, by = 'SCC') 
+
+years <- group_by (fullData, year, fips)
 df <- summarize(years, Emissions = sum(Emissions, na.rm = TRUE))
-plot(as.character(df$year), as.numeric(df$Emissions), main = 'PM25 emission per year, Baltimore', xlab = 'Year',
-	ylab = 'Emissions, tons', col='blue')
-lines(as.character(df$year), as.numeric(df$Emissions))
-dev.copy(png,filename="plots/plot2.png", bg="white");
-dev.off()
+g <- ggplot(data=df, aes(x=year, y=Emissions, group=fips, colour=fips), geom_line=aes(colour=GROUP), geom_smooth=aes(group=GROUP))
+g <- g + geom_line()
+g <- g + ggtitle ('Emissions per year,\n Baltimore (24510) vs LA County (06037)')
+g
+ggsave('plots/plot6.png')
